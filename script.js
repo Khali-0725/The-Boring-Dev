@@ -661,6 +661,12 @@
   backdrop.addEventListener("click", closeSidebarMobile);
   newChatBtn.addEventListener("click", newChat);
 
+  /* clicking the logo/wordmark goes home (fresh hero) */
+  const wordmark = document.querySelector(".wordmark");
+  if (wordmark) {
+    wordmark.addEventListener("click", function (e) { e.preventDefault(); newChat(); });
+  }
+
   /* ----- sticky header: hairline once scrolled ----- */
   function syncScrolled() {
     document.body.classList.toggle("scrolled", window.scrollY > 4);
