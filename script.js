@@ -14,10 +14,37 @@
   const dockInput = document.getElementById("dock-input");
   const chips     = document.getElementById("chips");
   const themeBtn  = document.getElementById("theme-toggle");
+  const menuBtn   = document.getElementById("menu-toggle");
+  const sidebar   = document.getElementById("sidebar");
+  const backdrop  = document.getElementById("backdrop");
+  const newChatBtn = document.getElementById("new-chat");
+  const recentsEl = document.getElementById("recents");
 
   let started = false;
-  const history = [];   // conversation so far: {role, content}
+  let history = [];     // active conversation: {role, content} — points at the active chat's messages
   let pendingImage = null;  // data-URL of an attached image, or null
+
+  /* ----- chat history store (device-local, no login) ----- */
+  const STORE_KEY = "bd-chats";
+  let chats = [];        // [{id, title, messages, updatedAt}]
+  let activeId = null;
+
+  function loadStore() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      chats = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(chats)) chats = [];
+    } catch (e) { chats = []; }
+  }
+  function saveStore() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(chats)); } catch (e) {}
+  }
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+  function activeChat() {
+    return chats.find(function (c) { return c.id === activeId; }) || null;
+  }
 
   /* ----- image attach ----- */
   const previews = [document.getElementById("preview-hero"), document.getElementById("preview-dock")];
@@ -279,6 +306,7 @@
           addMeta(msg, full, secs);
           wireCopy(msg, full);
           history.push({ role: "assistant", content: full });
+          persist();
         } else {
           bodyEl.textContent = "That didn't go through — empty reply.";
         }
@@ -329,6 +357,7 @@
     }
 
     clearImage();
+    persist();
     ariaReply(text);
   }
 
@@ -368,4 +397,173 @@
     if (!chip) return;
     send(chip.textContent);
   });
+
+  /* ===== chat history: read/derive helpers ===== */
+  function textOf(content) {
+    if (Array.isArray(content)) {
+      const t = content.find(function (p) { return p.type === "text"; });
+      return t ? t.text : "";
+    }
+    return String(content || "");
+  }
+  function imageOf(content) {
+    if (Array.isArray(content)) {
+      const im = content.find(function (p) { return p.type === "image_url"; });
+      return im && im.image_url ? im.image_url.url : null;
+    }
+    return null;
+  }
+  function titleFor(chat) {
+    const firstUser = chat.messages.find(function (m) { return m.role === "user"; });
+    const raw = firstUser ? textOf(firstUser.content) : "";
+    const t = raw.trim().replace(/\s+/g, " ");
+    return t ? truncate(t, 40) : "New chat";
+  }
+
+  /* save the active conversation back into the store, newest first */
+  function persist() {
+    const c = activeChat();
+    if (!c) return;
+    c.messages = history;
+    c.title = titleFor(c);
+    c.updatedAt = Date.now();
+    chats.sort(function (a, b) { return b.updatedAt - a.updatedAt; });
+    saveStore();
+    renderRecents();
+  }
+
+  /* rebuild the visible thread from the active conversation */
+  function renderThread() {
+    thread.innerHTML = "";
+    history.forEach(function (m) {
+      if (m.role === "user") {
+        addMessage("user", textOf(m.content), imageOf(m.content));
+      } else {
+        const msg = addMessage("aria", "");
+        msg.querySelector(".body").innerHTML = renderMarkdown(String(m.content));
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        meta.innerHTML = '<button class="copy-msg" type="button">copy</button>';
+        msg.appendChild(meta);
+        wireCopy(msg, String(m.content));
+      }
+    });
+  }
+
+  /* render the Recents list (only chats that have messages) */
+  function renderRecents() {
+    recentsEl.innerHTML = "";
+    const withMsgs = chats.filter(function (c) { return c.messages.length > 0; });
+    if (!withMsgs.length) {
+      const p = document.createElement("p");
+      p.className = "recents-empty";
+      p.textContent = "No chats yet.";
+      recentsEl.appendChild(p);
+      return;
+    }
+    withMsgs.forEach(function (c) {
+      const row = document.createElement("div");
+      row.className = "recent" + (c.id === activeId ? " active" : "");
+      const title = document.createElement("span");
+      title.className = "recent-title";
+      title.textContent = c.title || "New chat";
+      const del = document.createElement("button");
+      del.className = "recent-del";
+      del.type = "button";
+      del.setAttribute("aria-label", "Delete chat");
+      del.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+      row.appendChild(title);
+      row.appendChild(del);
+      row.addEventListener("click", function (e) {
+        if (e.target.closest(".recent-del")) return;
+        openChat(c.id);
+        closeSidebarMobile();
+      });
+      del.addEventListener("click", function (e) {
+        e.stopPropagation();
+        deleteChat(c.id);
+      });
+      recentsEl.appendChild(row);
+    });
+  }
+
+  /* switch to the centered hero (empty chat) */
+  function resetToHero() {
+    started = false;
+    thread.innerHTML = "";
+    chat.hidden = true;
+    dock.hidden = true;
+    hero.hidden = false;
+    clearImage();
+    promptEl.value = "";
+    autoGrow(promptEl);
+  }
+
+  function openChat(id) {
+    const c = chats.find(function (x) { return x.id === id; });
+    if (!c) return;
+    activeId = id;
+    history = c.messages;
+    if (history.length) {
+      started = true;
+      hero.hidden = true;
+      chat.hidden = false;
+      dock.hidden = false;
+      renderThread();
+    } else {
+      resetToHero();
+    }
+    renderRecents();
+  }
+
+  /* start a fresh chat (reuses an existing empty one so we don't pile up blanks) */
+  function newChat() {
+    let empty = chats.find(function (c) { return c.messages.length === 0; });
+    if (!empty) {
+      empty = { id: uid(), title: "New chat", messages: [], updatedAt: Date.now() };
+      chats.unshift(empty);
+    }
+    activeId = empty.id;
+    history = empty.messages;
+    resetToHero();
+    renderRecents();
+    closeSidebarMobile();
+  }
+
+  function deleteChat(id) {
+    chats = chats.filter(function (c) { return c.id !== id; });
+    saveStore();
+    if (id === activeId) {
+      const next = chats.find(function (c) { return c.messages.length > 0; });
+      if (next) openChat(next.id);
+      else newChat();
+    } else {
+      renderRecents();
+    }
+  }
+
+  /* ----- sidebar open/close (drawer on mobile; docked on desktop) ----- */
+  function openSidebar() {
+    document.body.classList.add("nav-open");
+    backdrop.hidden = false;
+    menuBtn.setAttribute("aria-expanded", "true");
+  }
+  function closeSidebarMobile() {
+    document.body.classList.remove("nav-open");
+    backdrop.hidden = true;
+    menuBtn.setAttribute("aria-expanded", "false");
+  }
+  menuBtn.addEventListener("click", function () {
+    if (document.body.classList.contains("nav-open")) closeSidebarMobile();
+    else openSidebar();
+  });
+  backdrop.addEventListener("click", closeSidebarMobile);
+  newChatBtn.addEventListener("click", newChat);
+
+  /* ----- init: restore the most recent conversation, or start fresh ----- */
+  loadStore();
+  chats.sort(function (a, b) { return b.updatedAt - a.updatedAt; });
+  const recent = chats.find(function (c) { return c.messages.length > 0; });
+  if (recent) openChat(recent.id);
+  else newChat();
 })();
