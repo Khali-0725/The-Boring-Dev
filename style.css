@@ -88,6 +88,17 @@ body.scrolled .nav { border-bottom-color: var(--line); }
   color: var(--ink);
   text-decoration: none;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+.brand-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: block;
+  flex: none;
+  box-shadow: 0 2px 8px -3px rgba(22, 24, 29, 0.45);
 }
 .wordmark .dot { color: var(--accent); }
 
@@ -534,6 +545,7 @@ body.scrolled .nav { border-bottom-color: var(--line); }
 @media (max-width: 560px) {
   .nav { padding: 20px; }
   .wordmark { font-size: 1.35rem; }
+  .brand-mark { width: 28px; height: 28px; }
   .version { font-size: 0.66rem; }
   .nav-right { gap: 12px; }
   .theme-toggle { width: 34px; height: 34px; }
