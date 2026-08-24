@@ -4,11 +4,11 @@
 // Never exposes your API keys — only whether each key is set and if it responds.
 
 const PROVIDERS = [
-  { name: "groq",       url: "https://api.groq.com/openai/v1/chat/completions",        keyEnv: "GROQ_API_KEY",       model: process.env.GROQ_MODEL       || "llama-3.3-70b-versatile" },
-  { name: "openrouter", url: "https://openrouter.ai/api/v1/chat/completions",          keyEnv: "OPENROUTER_API_KEY", model: process.env.OPENROUTER_MODEL || "deepseek/deepseek-chat-v3:free" },
-  { name: "nvidia",     url: "https://integrate.api.nvidia.com/v1/chat/completions",   keyEnv: "NVIDIA_API_KEY",     model: process.env.NVIDIA_MODEL     || "meta/llama-3.3-70b-instruct" },
   { name: "mistral",    url: "https://api.mistral.ai/v1/chat/completions",             keyEnv: "MISTRAL_API_KEY",    model: process.env.MISTRAL_MODEL    || "mistral-small-latest" },
+  { name: "groq",       url: "https://api.groq.com/openai/v1/chat/completions",        keyEnv: "GROQ_API_KEY",       model: process.env.GROQ_MODEL       || "openai/gpt-oss-120b" },
   { name: "sambanova",  url: "https://api.sambanova.ai/v1/chat/completions",           keyEnv: "SAMBANOVA_API_KEY",  model: process.env.SAMBANOVA_MODEL  || "Meta-Llama-3.3-70B-Instruct" },
+  { name: "openrouter", url: "https://openrouter.ai/api/v1/chat/completions",          keyEnv: "OPENROUTER_API_KEY", model: process.env.OPENROUTER_MODEL || "meta-llama/llama-3.3-70b-instruct:free" },
+  { name: "nvidia",     url: "https://integrate.api.nvidia.com/v1/chat/completions",   keyEnv: "NVIDIA_API_KEY",     model: process.env.NVIDIA_MODEL     || "meta/llama-3.3-70b-instruct" },
 ];
 
 async function pingProvider(p) {
