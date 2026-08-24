@@ -26,8 +26,8 @@ async function pingProvider(p) {
       headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
       body: JSON.stringify({
         model: p.model,
-        max_tokens: 5,
-        messages: [{ role: "user", content: "ping" }],
+        max_tokens: 64,
+        messages: [{ role: "user", content: "Reply with the single word: pong" }],
       }),
       signal: controller.signal,
     });

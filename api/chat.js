@@ -13,40 +13,16 @@ const SYSTEM_PROMPT =
 
 // All endpoints below speak the OpenAI /chat/completions format.
 // Add or remove entries freely — order = priority.
-// Order = priority. Mistral is first because it's confirmed working and fast.
-// The rest are fallbacks. Model names below reflect what each provider offers
-// as of Aug 2026 (Groq retired the old llama-3.3 chat models). You can override
-// any model with the matching *_MODEL env var in Vercel without editing code.
+// Simplified to a single provider for now: Mistral (fastest confirmed working).
+// To re-add failover later, just add more entries to this list — the loop below
+// already handles trying them in order. You can override the model with the
+// MISTRAL_MODEL env var in Vercel without editing code.
 const PROVIDERS = [
   {
     name: "mistral",
     url: "https://api.mistral.ai/v1/chat/completions",
     keyEnv: "MISTRAL_API_KEY",
     model: process.env.MISTRAL_MODEL || "mistral-small-latest",
-  },
-  {
-    name: "groq",
-    url: "https://api.groq.com/openai/v1/chat/completions",
-    keyEnv: "GROQ_API_KEY",
-    model: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
-  },
-  {
-    name: "sambanova",
-    url: "https://api.sambanova.ai/v1/chat/completions",
-    keyEnv: "SAMBANOVA_API_KEY",
-    model: process.env.SAMBANOVA_MODEL || "Meta-Llama-3.3-70B-Instruct",
-  },
-  {
-    name: "openrouter",
-    url: "https://openrouter.ai/api/v1/chat/completions",
-    keyEnv: "OPENROUTER_API_KEY",
-    model: process.env.OPENROUTER_MODEL || "meta-llama/llama-3.3-70b-instruct:free",
-  },
-  {
-    name: "nvidia",
-    url: "https://integrate.api.nvidia.com/v1/chat/completions",
-    keyEnv: "NVIDIA_API_KEY",
-    model: process.env.NVIDIA_MODEL || "meta/llama-3.3-70b-instruct",
   },
 ];
 
