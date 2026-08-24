@@ -109,6 +109,26 @@
     });
   });
 
+  /* paste an image straight from the clipboard (Ctrl+V / screenshots) */
+  function handlePaste(e) {
+    const items = (e.clipboardData && e.clipboardData.items) || [];
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      if (it.type && it.type.indexOf("image") === 0) {
+        const file = it.getAsFile();
+        if (file) {
+          e.preventDefault();
+          fileToDataURL(file, 1024, 0.8)
+            .then(function (url) { pendingImage = url; renderPreview(); })
+            .catch(function () {});
+        }
+        return;
+      }
+    }
+  }
+  promptEl.addEventListener("paste", handlePaste);
+  dockInput.addEventListener("paste", handlePaste);
+
   /* ----- theme toggle ----- */
   function syncThemeButton() {
     const dark = document.documentElement.getAttribute("data-theme") === "dark";
@@ -234,6 +254,39 @@
     }, 1400);
   }
 
+  /* ----- text-to-speech (browser speechSynthesis, no backend) ----- */
+  let speakingBtn = null;
+  function stripForSpeech(md) {
+    return String(md)
+      .replace(/```[\s\S]*?```/g, ". code block. ")
+      .replace(/`([^`]+)`/g, "$1")
+      .replace(/\[(.*?)\]\((?:.*?)\)/g, "$1")
+      .replace(/[*#>_~`]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+  function resetSpeakBtn(btn) {
+    if (!btn) return;
+    btn.classList.remove("speaking");
+    btn.textContent = "speak";
+  }
+  function toggleSpeak(btn, text) {
+    const synth = window.speechSynthesis;
+    if (!synth) { flashButton(btn, "no audio"); return; }
+    // clicking the one that's already talking = stop
+    if (speakingBtn === btn) { synth.cancel(); resetSpeakBtn(btn); speakingBtn = null; return; }
+    synth.cancel();
+    resetSpeakBtn(speakingBtn);
+    const u = new SpeechSynthesisUtterance(stripForSpeech(text));
+    u.rate = 1.02;
+    u.onend = function () { resetSpeakBtn(btn); if (speakingBtn === btn) speakingBtn = null; };
+    u.onerror = u.onend;
+    speakingBtn = btn;
+    btn.classList.add("speaking");
+    btn.textContent = "stop";
+    synth.speak(u);
+  }
+
   /* wire up code-block + message copy buttons inside a rendered message */
   function wireCopy(msg, rawText) {
     msg.querySelectorAll(".code-copy").forEach(function (btn) {
@@ -250,6 +303,10 @@
         flashButton(copyMsg, "copied");
       });
     }
+    const speakBtn = msg.querySelector(".speak-btn");
+    if (speakBtn) {
+      speakBtn.addEventListener("click", function () { toggleSpeak(speakBtn, rawText); });
+    }
   }
 
   /* add the response-time + copy footer to an assistant message */
@@ -258,7 +315,8 @@
     meta.className = "meta";
     meta.innerHTML =
       '<span class="speed">⚡ ' + secs + 's</span>' +
-      '<button class="copy-msg" type="button">copy</button>';
+      '<button class="copy-msg" type="button">copy</button>' +
+      '<button class="speak-btn" type="button">speak</button>';
     msg.appendChild(meta);
   }
 
@@ -443,7 +501,9 @@
         msg.querySelector(".body").innerHTML = renderMarkdown(String(m.content));
         const meta = document.createElement("div");
         meta.className = "meta";
-        meta.innerHTML = '<button class="copy-msg" type="button">copy</button>';
+        meta.innerHTML =
+          '<button class="copy-msg" type="button">copy</button>' +
+          '<button class="speak-btn" type="button">speak</button>';
         msg.appendChild(meta);
         wireCopy(msg, String(m.content));
       }

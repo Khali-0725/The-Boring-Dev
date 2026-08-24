@@ -448,7 +448,7 @@ body.scrolled .nav { border-bottom-color: var(--line); }
   letter-spacing: 0.06em;
   color: var(--faint);
 }
-.msg .copy-msg {
+.msg .copy-msg, .msg .speak-btn {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.66rem;
   letter-spacing: 0.06em;
@@ -460,8 +460,9 @@ body.scrolled .nav { border-bottom-color: var(--line); }
   cursor: pointer;
   transition: color 0.18s;
 }
-.msg .copy-msg:hover { color: var(--ink); }
+.msg .copy-msg:hover, .msg .speak-btn:hover { color: var(--ink); }
 .msg .copy-msg.done { color: var(--accent); }
+.msg .speak-btn.speaking { color: var(--accent); }
 
 /* ---------- docked composer (chat mode) ---------- */
 .dock {
