@@ -524,7 +524,7 @@
     const c = activeChat();
     if (!c) return;
     c.messages = history;
-    c.title = titleFor(c);
+    c.title = c.named ? (c.title || titleFor(c)) : titleFor(c);
     c.updatedAt = Date.now();
     chats.sort(function (a, b) { return b.updatedAt - a.updatedAt; });
     saveStore();
@@ -568,21 +568,21 @@
       const title = document.createElement("span");
       title.className = "recent-title";
       title.textContent = c.title || "New chat";
-      const del = document.createElement("button");
-      del.className = "recent-del";
-      del.type = "button";
-      del.setAttribute("aria-label", "Delete chat");
-      del.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+      const menu = document.createElement("button");
+      menu.className = "recent-menu";
+      menu.type = "button";
+      menu.setAttribute("aria-label", "Chat options");
+      menu.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="5" cy="12" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="19" cy="12" r="1.6"></circle></svg>';
       row.appendChild(title);
-      row.appendChild(del);
+      row.appendChild(menu);
       row.addEventListener("click", function (e) {
-        if (e.target.closest(".recent-del")) return;
+        if (e.target.closest(".recent-menu")) return;
         openChat(c.id);
         closeSidebarMobile();
       });
-      del.addEventListener("click", function (e) {
+      menu.addEventListener("click", function (e) {
         e.stopPropagation();
-        deleteChat(c.id);
+        openChatMenu(menu, c.id);
       });
       recentsEl.appendChild(row);
     });
@@ -665,6 +665,71 @@
   const wordmark = document.querySelector(".wordmark");
   if (wordmark) {
     wordmark.addEventListener("click", function (e) { e.preventDefault(); newChat(); });
+  }
+
+  /* ----- per-chat rename/delete menu (⋯) ----- */
+  let menuChatId = null;
+  const chatMenu = document.createElement("div");
+  chatMenu.className = "chat-menu";
+  chatMenu.hidden = true;
+  chatMenu.innerHTML =
+    '<button type="button" data-act="rename"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>Rename</button>' +
+    '<button type="button" data-act="delete" class="danger"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>Delete</button>';
+  document.body.appendChild(chatMenu);
+
+  function openChatMenu(btn, id) {
+    menuChatId = id;
+    chatMenu.hidden = false;
+    const r = btn.getBoundingClientRect();
+    const mw = chatMenu.offsetWidth || 150;
+    let left = r.right - mw;
+    if (left < 8) left = 8;
+    chatMenu.style.left = left + "px";
+    chatMenu.style.top = (r.bottom + 6) + "px";
+  }
+  function closeChatMenu() { chatMenu.hidden = true; menuChatId = null; }
+  chatMenu.addEventListener("click", function (e) {
+    const b = e.target.closest("button");
+    if (!b) return;
+    const act = b.getAttribute("data-act");
+    const id = menuChatId;
+    closeChatMenu();
+    if (act === "rename") renameChat(id);
+    else if (act === "delete") confirmDeleteChat(id);
+  });
+  document.addEventListener("click", function (e) {
+    if (chatMenu.hidden) return;
+    if (e.target.closest(".chat-menu") || e.target.closest(".recent-menu")) return;
+    closeChatMenu();
+  });
+
+  function renameChat(id) {
+    const c = chats.find(function (x) { return x.id === id; });
+    if (!c) return;
+    const next = window.prompt("Rename chat", c.title || "");
+    if (next === null) return;            // cancelled
+    const t = next.trim();
+    c.title = t || titleFor(c);
+    c.named = !!t;                        // remember it's a manual name
+    saveStore();
+    renderRecents();
+  }
+  function confirmDeleteChat(id) {
+    const c = chats.find(function (x) { return x.id === id; });
+    const name = c && c.title ? c.title : "this chat";
+    if (window.confirm('Delete "' + name + '"?\nThis can\'t be undone.')) deleteChat(id);
+  }
+
+  /* ----- clear all device data ----- */
+  const clearBtn = document.getElementById("clear-data");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", function () {
+      if (!window.confirm("Are you sure?\nThis will delete ALL chats saved on this device. This can't be undone.")) return;
+      chats = [];
+      try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+      closeChatMenu();
+      newChat();
+    });
   }
 
   /* ----- sticky header: hairline once scrolled ----- */
