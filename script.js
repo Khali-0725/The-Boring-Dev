@@ -582,7 +582,8 @@
       });
       menu.addEventListener("click", function (e) {
         e.stopPropagation();
-        openChatMenu(menu, c.id);
+        if (!chatMenu.hidden && menuChatId === c.id) closeChatMenu();
+        else openChatMenu(menu, c.id);
       });
       recentsEl.appendChild(row);
     });
