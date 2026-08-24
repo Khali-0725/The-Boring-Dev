@@ -1,0 +1,13 @@
+# Secrets — NEVER commit real keys
+.env
+.env.local
+.env*.local
+
+# Dependencies / build
+node_modules/
+.vercel/
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+*.log

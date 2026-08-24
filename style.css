@@ -1,0 +1,377 @@
+/* ============================================================
+   Aria — minimal & premium
+   Palette: cool porcelain paper, graphite ink, one deep-indigo accent
+   Type: Instrument Serif (display) · Inter (body) · IBM Plex Mono (utility)
+   Signature: the composer input as the hero
+   ============================================================ */
+
+:root {
+  --paper:   #F5F6F8;   /* cool porcelain */
+  --surface: #FFFFFF;   /* cards / input */
+  --ink:     #16181D;   /* graphite near-black */
+  --muted:   #6B7280;   /* slate secondary */
+  --faint:   #9AA0AB;   /* tertiary */
+  --line:    #E4E6EB;   /* hairline */
+  --accent:  #4338CA;   /* deep indigo — used only on action + focus */
+  --accent-soft: rgba(67, 56, 202, 0.10);
+
+  --r-lg: 20px;
+  --r-md: 14px;
+  --r-pill: 999px;
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* dark theme — deep charcoal, softened indigo for contrast */
+:root[data-theme="dark"] {
+  --paper:   #0F1115;
+  --surface: #171A21;
+  --ink:     #ECEEF2;
+  --muted:   #9AA0AB;
+  --faint:   #6B7280;
+  --line:    #262A33;
+  --accent:  #8B7DF5;
+  --accent-soft: rgba(139, 125, 245, 0.14);
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  transition: background 0.35s var(--ease), color 0.35s var(--ease);
+}
+
+/* subtle paper grain / ambient glow, kept very quiet */
+.grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(60% 50% at 50% 8%, rgba(67, 56, 202, 0.05), transparent 70%);
+}
+
+/* ---------- nav ---------- */
+.nav {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 26px clamp(20px, 5vw, 56px);
+}
+
+.wordmark {
+  font-family: 'Instrument Serif', serif;
+  font-size: 1.55rem;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.wordmark .dot { color: var(--accent); }
+
+.version {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--faint);
+  text-transform: uppercase;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.theme-toggle {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, transform 0.2s var(--ease);
+}
+.theme-toggle:hover { color: var(--ink); border-color: var(--faint); transform: translateY(-1px); }
+.theme-toggle svg { display: block; }
+/* show sun in dark mode (to go light), moon in light mode (to go dark) */
+.theme-toggle .i-sun  { display: none; }
+.theme-toggle .i-moon { display: block; }
+:root[data-theme="dark"] .theme-toggle .i-sun  { display: block; }
+:root[data-theme="dark"] .theme-toggle .i-moon { display: none; }
+
+/* ---------- stage ---------- */
+.stage {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 clamp(20px, 5vw, 40px) 40px;
+}
+
+/* ---------- hero ---------- */
+.hero { width: 100%; text-align: center; }
+
+.eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 18px;
+}
+
+.headline {
+  font-family: 'Instrument Serif', serif;
+  font-weight: 400;
+  font-size: clamp(2.6rem, 8vw, 4.4rem);
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  margin: 0 0 18px;
+}
+.headline em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.subtitle {
+  color: var(--muted);
+  font-size: 1.02rem;
+  max-width: 30ch;
+  margin: 0 auto 38px;
+}
+
+/* ---------- composer (the signature element) ---------- */
+.composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 12px 12px 12px 20px;
+  box-shadow: 0 1px 2px rgba(22, 24, 29, 0.03),
+              0 12px 40px -18px rgba(22, 24, 29, 0.20);
+  transition: border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
+}
+.composer:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft),
+              0 12px 40px -18px rgba(67, 56, 202, 0.35);
+}
+
+.composer-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: var(--ink);
+  font-family: 'Inter', sans-serif;
+  font-size: 1.05rem;
+  line-height: 1.5;
+  padding: 8px 0;
+  max-height: 200px;
+}
+.composer-input::placeholder { color: var(--faint); }
+
+.send {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: var(--r-md);
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.2s var(--ease), background 0.2s var(--ease), opacity 0.2s;
+}
+.send:hover { transform: translateY(-1px); background: #372DB0; }
+.send:active { transform: translateY(0); }
+.send:disabled { opacity: 0.4; cursor: default; transform: none; }
+
+/* ---------- chips ---------- */
+.chips {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  padding: 0;
+  margin: 22px 0 0;
+}
+.chip {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.86rem;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.chip:hover {
+  color: var(--ink);
+  border-color: var(--faint);
+  background: var(--surface);
+}
+
+/* ---------- chat ---------- */
+.chat {
+  width: 100%;
+  align-self: stretch;
+}
+.thread {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 8px 0 24px;
+}
+
+.msg {
+  max-width: 80%;
+  padding: 14px 18px;
+  border-radius: 16px;
+  font-size: 1rem;
+  line-height: 1.55;
+  animation: rise 0.4s var(--ease) both;
+}
+.msg.user {
+  align-self: flex-end;
+  background: var(--accent);
+  color: #fff;
+  border-bottom-right-radius: 5px;
+}
+.msg.aria {
+  align-self: flex-start;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  border-bottom-left-radius: 5px;
+}
+.msg .who {
+  display: block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  margin-bottom: 6px;
+}
+
+/* typing indicator */
+.typing { display: inline-flex; gap: 5px; align-items: center; }
+.typing span {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--faint);
+  animation: blink 1.2s infinite ease-in-out;
+}
+.typing span:nth-child(2) { animation-delay: 0.2s; }
+.typing span:nth-child(3) { animation-delay: 0.4s; }
+
+/* ---------- docked composer (chat mode) ---------- */
+.dock {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 10px 10px 10px 20px;
+  box-shadow: 0 -8px 30px -20px rgba(22, 24, 29, 0.3);
+  transition: border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
+}
+.dock:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+/* ---------- footer ---------- */
+.foot {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 20px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  color: var(--faint);
+}
+
+/* ---------- motion ---------- */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes blink {
+  0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-3px); }
+}
+
+/* staggered hero entrance */
+.hero > * { animation: rise 0.6s var(--ease) both; }
+.hero .headline { animation-delay: 0.06s; }
+.hero .subtitle { animation-delay: 0.12s; }
+.hero .composer { animation-delay: 0.18s; }
+.hero .chips    { animation-delay: 0.24s; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 560px) {
+  .nav { padding: 20px; }
+  .wordmark { font-size: 1.35rem; }
+  .version { font-size: 0.66rem; }
+  .nav-right { gap: 12px; }
+  .theme-toggle { width: 34px; height: 34px; }
+  .headline { font-size: 2.5rem; }
+  .subtitle { margin-bottom: 28px; }
+  .msg { max-width: 88%; }
+  .chips { gap: 8px; }
+  .chip { font-size: 0.8rem; padding: 7px 13px; }
+}
+
+/* ---------- a11y ---------- */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.chip:focus-visible, .send:focus-visible { outline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
