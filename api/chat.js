@@ -50,6 +50,10 @@ async function callProvider(p, messages) {
   const key = process.env[p.keyEnv];
   if (!key) return { skip: true };
 
+  // don't let a slow/hanging provider stall the whole request
+  const controller = new AbortController();
+  const timer = setTimeout(function () { controller.abort(); }, 15000);
+
   let resp;
   try {
     resp = await fetch(p.url, {
@@ -64,10 +68,14 @@ async function callProvider(p, messages) {
         max_tokens: 1024,
         messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
       }),
+      signal: controller.signal,
     });
   } catch (e) {
-    return { error: p.name + ": network error" };
+    clearTimeout(timer);
+    const why = e && e.name === "AbortError" ? "timeout" : "network error";
+    return { retryable: true, error: p.name + ": " + why };
   }
+  clearTimeout(timer);
 
   // rate-limited or server error -> let caller try the next provider
   if (resp.status === 429 || resp.status >= 500) {
