@@ -72,7 +72,7 @@
     return msg;
   }
 
-  /* call our serverless function (which talks to Groq) */
+  /* call our serverless function and stream the reply token-by-token */
   function ariaReply(userText) {
     const typing = addTyping();
     fetch("/api/chat", {
@@ -80,19 +80,39 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ messages: history }),
     })
-      .then(function (r) {
-        return r.json().then(function (data) {
-          return { ok: r.ok, data: data };
-        });
-      })
-      .then(function (res) {
-        typing.remove();
-        if (res.ok && res.data && res.data.reply) {
-          addMessage("aria", res.data.reply);
-          history.push({ role: "assistant", content: res.data.reply });
-        } else {
-          const why = (res.data && (res.data.error || res.data.detail)) || "Unknown error.";
+      .then(async function (r) {
+        // error path: server sends JSON (not a stream)
+        if (!r.ok || !r.body) {
+          typing.remove();
+          let why = "Unknown error.";
+          try {
+            const data = await r.json();
+            why = (data && (data.error || data.detail)) || why;
+          } catch (e) {}
           addMessage("aria", "That didn't go through — " + why);
+          return;
+        }
+
+        // success path: read the plain-text stream and grow the bubble live
+        typing.remove();
+        const msg = addMessage("aria", "");
+        const bodyEl = msg.querySelector(".body");
+        const reader = r.body.getReader();
+        const decoder = new TextDecoder();
+        let full = "";
+
+        while (true) {
+          const chunk = await reader.read();
+          if (chunk.done) break;
+          full += decoder.decode(chunk.value, { stream: true });
+          bodyEl.textContent = full;
+          msg.scrollIntoView({ behavior: "smooth", block: "end" });
+        }
+
+        if (full.trim()) {
+          history.push({ role: "assistant", content: full });
+        } else {
+          bodyEl.textContent = "That didn't go through — empty reply.";
         }
       })
       .catch(function () {
