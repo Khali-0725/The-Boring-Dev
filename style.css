@@ -745,6 +745,9 @@ body.nav-open .sidebar { transform: translateX(0); }
   flex-direction: column;
   gap: 2px;
 }
+/* the [hidden] attribute must win over the display rules above */
+.chat-menu[hidden],
+.attach-preview[hidden] { display: none !important; }
 .chat-menu button {
   display: flex;
   align-items: center;
