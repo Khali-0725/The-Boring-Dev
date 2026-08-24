@@ -9,120 +9,188 @@
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Geist:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <script>
-    /* set theme before paint to avoid a flash */
+    /* set theme before paint to avoid a flash — default is dark (matches design) */
     (function () {
       try {
-        var saved = localStorage.getItem("bd-theme");
-        var dark = saved ? saved === "dark"
-          : window.matchMedia("(prefers-color-scheme: dark)").matches;
-        if (dark) document.documentElement.setAttribute("data-theme", "dark");
+        if (localStorage.getItem("bd-theme") === "light")
+          document.documentElement.classList.add("light");
       } catch (e) {}
     })();
   </script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            background: "var(--background)",
+            surface: "var(--surface)",
+            "surface-bright": "var(--surface-bright)",
+            "surface-variant": "var(--surface-variant)",
+            "surface-container-lowest": "var(--sc-lowest)",
+            "surface-container-low": "var(--sc-low)",
+            "surface-container": "var(--sc)",
+            "surface-container-high": "var(--sc-high)",
+            "surface-container-highest": "var(--sc-highest)",
+            "on-surface": "var(--on-surface)",
+            "on-surface-variant": "var(--on-surface-variant)",
+            "on-background": "var(--on-surface)",
+            primary: "var(--primary)",
+            "primary-container": "var(--primary-container)",
+            "on-primary": "var(--on-primary)",
+            "on-primary-container": "var(--on-primary-container)",
+            outline: "var(--outline)",
+            "outline-variant": "var(--outline-variant)",
+            error: "var(--error)"
+          },
+          borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", "2xl": "1rem", full: "9999px" },
+          spacing: {
+            "margin-desktop": "48px", "margin-mobile": "16px",
+            "stack-lg": "32px", gutter: "24px", "stack-sm": "8px", "stack-md": "16px"
+          },
+          fontFamily: {
+            "display-sm": ["Libre Caslon Text", "serif"],
+            "display-lg": ["Libre Caslon Text", "serif"],
+            "headline-md": ["Libre Caslon Text", "serif"],
+            "body-md": ["Geist", "sans-serif"],
+            "body-lg": ["Geist", "sans-serif"],
+            "label-caps": ["Geist", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          },
+          fontSize: {
+            "display-sm": ["40px", { lineHeight: "1.2", letterSpacing: "-0.01em", fontWeight: "400" }],
+            "display-lg": ["clamp(40px,8vw,64px)", { lineHeight: "1.1", letterSpacing: "-0.02em", fontWeight: "400" }],
+            "headline-md": ["24px", { lineHeight: "1.4", fontWeight: "400" }],
+            "body-md": ["16px", { lineHeight: "1.6", fontWeight: "400" }],
+            "body-lg": ["18px", { lineHeight: "1.6", fontWeight: "400" }],
+            "label-caps": ["12px", { lineHeight: "1.2", letterSpacing: "0.1em", fontWeight: "600" }],
+            mono: ["14px", { lineHeight: "1.5", fontWeight: "400" }]
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="stylesheet" href="css/app.css" />
 </head>
-<body>
-  <div class="grain" aria-hidden="true"></div>
-
-  <!-- Chat history sidebar (device-stored, no login) -->
-  <aside class="sidebar" id="sidebar" aria-label="Chat history">
-    <div class="sidebar-head">
-      <span class="sidebar-title">chats</span>
-      <button class="new-chat" id="new-chat" type="button">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-        New chat
+<body class="bg-background text-on-surface font-body-md h-screen flex overflow-hidden selection:bg-primary-container selection:text-on-primary-container">
+  <!-- Chat history sidebar (device-local, no login) -->
+  <aside id="sidebar" aria-label="Chat history"
+    class="fixed md:static inset-y-0 left-0 z-40 w-[280px] shrink-0 flex flex-col h-screen p-stack-md gap-stack-md bg-surface-container-lowest border-r border-outline-variant/10 -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out">
+    <div class="flex justify-between items-center mb-2 px-1">
+      <span class="font-display-sm text-headline-md text-on-surface">chats</span>
+      <button id="new-chat" type="button"
+        class="bg-primary-container text-on-primary-container rounded-full px-4 py-2 font-label-caps text-label-caps flex items-center gap-2 hover:opacity-90 transition-opacity">
+        <span class="material-symbols-outlined" style="font-size:16px;">add</span>New chat
       </button>
     </div>
-    <p class="recents-label">Recents</p>
-    <nav class="recents" id="recents" aria-label="Recent chats"></nav>
-    <div class="sidebar-foot">
-      <button class="clear-data" id="clear-data" type="button">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-        Clear all data
+    <p class="font-label-caps text-label-caps text-on-surface-variant uppercase px-1">Recents</p>
+    <nav id="recents" class="flex-1 overflow-y-auto space-y-1 -mx-1 px-1" aria-label="Recent chats"></nav>
+    <div class="mt-auto pt-4 border-t border-outline-variant/10">
+      <button id="clear-data" type="button"
+        class="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-all font-body-md text-sm group">
+        <span class="material-symbols-outlined group-hover:text-error transition-colors" style="font-size:18px;">delete_forever</span>Clear all data
       </button>
-      <p class="sidebar-note">Saved on this device only · no login</p>
+      <p class="mt-3 px-1 text-[10px] text-on-surface-variant/60 font-mono">Saved on this device only · no login</p>
     </div>
   </aside>
-  <div class="backdrop" id="backdrop" hidden></div>
+  <div id="backdrop" class="fixed inset-0 z-30 bg-black/50 md:hidden" hidden></div>
 
-  <header class="nav">
-    <div class="nav-left">
-      <button id="menu-toggle" class="menu-toggle" type="button" aria-label="Toggle chat history" aria-expanded="false" title="Chat history">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-      </button>
-      <a class="wordmark" href="#" aria-label="The Boring Dev home"><img class="brand-mark" src="assets/logo-mark.png" alt="" width="34" height="34" />the boring dev<span class="dot">.</span></a>
-    </div>
-    <div class="nav-right">
-      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch theme" aria-pressed="false" title="Toggle dark mode">
-        <svg class="i-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
-        <svg class="i-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
-      </button>
-      <span class="version">by khali · v0.1</span>
-    </div>
-  </header>
-
-  <main class="stage">
-    <!-- HERO: the composer is the hero -->
-    <section class="hero" id="hero">
-      <p class="eyebrow">A coding assistant · by Khali</p>
-      <h1 class="headline">What are we<br /><em>building</em>?</h1>
-      <p class="subtitle">No hype, no noise — just help. Type below and let's get to work.</p>
-
-      <form class="composer" id="composer" autocomplete="off">
-        <div class="attach-preview" id="preview-hero" hidden></div>
-        <input type="file" id="file-hero" class="file-input" accept="image/*" hidden />
-        <button type="button" class="attach" data-target="file-hero" aria-label="Attach image" title="Attach image">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a5 5 0 0 1-7.07-7.07l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+  <!-- Main content -->
+  <main class="flex-1 flex flex-col h-screen relative bg-background min-w-0">
+    <!-- Top app bar -->
+    <header class="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-stack-md z-10 shrink-0">
+      <div class="flex items-center gap-3 min-w-0">
+        <button id="menu-toggle" type="button" aria-label="Toggle chat history" aria-expanded="false"
+          class="md:hidden w-10 h-10 rounded-full border border-outline-variant/20 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
+          <span class="material-symbols-outlined">menu</span>
         </button>
-        <button type="button" class="mic" data-target="prompt" aria-label="Speak your message" title="Voice input">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+        <a id="home-link" href="#" aria-label="The Boring Dev home" class="flex items-center gap-3 min-w-0">
+          <img class="w-8 h-8 rounded-full" src="assets/logo-mark.png" alt="" width="32" height="32" />
+          <span class="font-display-sm text-headline-md text-on-surface tracking-tight truncate">the boring dev <span class="text-primary">.</span></span>
+        </a>
+      </div>
+      <div class="flex items-center gap-4 shrink-0">
+        <button id="theme-toggle" type="button" aria-label="Switch theme" aria-pressed="false"
+          class="w-10 h-10 rounded-full border border-outline-variant/20 flex items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary/50 transition-all">
+          <span class="material-symbols-outlined i-sun">wb_sunny</span>
+          <span class="material-symbols-outlined i-moon">dark_mode</span>
         </button>
-        <textarea
-          id="prompt"
-          class="composer-input"
-          rows="1"
-          placeholder="Ask the Boring Dev anything…"
-          aria-label="Message the Boring Dev"></textarea>
-        <button type="submit" class="send" id="send" aria-label="Send message">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="6 11 12 5 18 11"></polyline></svg>
-        </button>
-      </form>
+        <span class="font-label-caps text-label-caps text-on-surface-variant tracking-widest hidden md:block">BY KHALI · V0.1</span>
+      </div>
+    </header>
 
-      <ul class="chips" id="chips" aria-label="Example prompts">
-        <li><button class="chip" type="button">Explain this error message</button></li>
-        <li><button class="chip" type="button">Refactor a messy function</button></li>
-        <li><button class="chip" type="button">Write a quick unit test</button></li>
-      </ul>
+    <!-- HERO (new chat) -->
+    <section id="hero" class="flex-1 flex flex-col items-center justify-center px-margin-mobile md:px-margin-desktop relative overflow-y-auto">
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] max-w-full bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
+      <div class="w-full max-w-[720px] flex flex-col items-center text-center -mt-10 relative z-0">
+        <p class="font-label-caps text-label-caps text-primary tracking-[0.2em] mb-stack-md uppercase">A coding assistant · by Khali</p>
+        <h1 class="font-display-lg text-display-lg text-on-surface mb-6 leading-[1.1]">What are we<br /><span class="text-primary italic font-light">building</span> today?</h1>
+        <p class="font-body-lg text-body-lg text-on-surface-variant max-w-lg mb-10">No hype, no noise — just help. Type below and let's get to work.</p>
+
+        <form id="composer" autocomplete="off"
+          class="w-full max-w-[700px] glass-panel rounded-2xl p-2 flex flex-col gap-2 glow-focus transition-all duration-300">
+          <div id="preview-hero" class="attach-preview px-3 pt-2" hidden></div>
+          <div class="flex items-center gap-1 px-2 py-1 w-full">
+            <input type="file" id="file-hero" class="file-input" accept="image/*" hidden />
+            <button type="button" class="attach icon-btn" data-target="file-hero" aria-label="Attach image" title="Attach image">
+              <span class="material-symbols-outlined">attach_file</span>
+            </button>
+            <button type="button" class="mic icon-btn" data-target="prompt" aria-label="Voice input" title="Voice input">
+              <span class="material-symbols-outlined">mic</span>
+            </button>
+            <textarea id="prompt" rows="1" placeholder="Ask the Boring Dev anything…" aria-label="Message the Boring Dev"
+              class="flex-1 resize-none bg-transparent border-none text-on-surface font-body-lg placeholder-on-surface-variant/50 focus:ring-0 px-2 py-2 max-h-[200px] outline-none"></textarea>
+            <button type="submit" id="send" aria-label="Send message"
+              class="w-10 h-10 shrink-0 rounded-xl bg-primary-container text-on-primary-container flex items-center justify-center hover:opacity-90 transition-all shadow-[0_0_15px_rgba(160,120,255,0.2)]">
+              <span class="material-symbols-outlined" style="font-size:20px;">arrow_upward</span>
+            </button>
+          </div>
+        </form>
+
+        <ul id="chips" class="flex flex-wrap justify-center gap-3 mt-8" aria-label="Example prompts">
+          <li><button class="chip" type="button">Explain this error message</button></li>
+          <li><button class="chip" type="button">Refactor a messy function</button></li>
+          <li><button class="chip" type="button">Write a quick unit test</button></li>
+        </ul>
+      </div>
     </section>
 
-    <!-- CHAT: revealed after first send -->
-    <section class="chat" id="chat" hidden>
-      <div class="thread" id="thread" aria-live="polite"></div>
+    <!-- CHAT scroll area -->
+    <section id="chat" class="flex-1 overflow-y-auto scroll-smooth px-margin-mobile md:px-margin-desktop pb-[150px]" hidden>
+      <div id="thread" class="max-w-[800px] mx-auto pt-4 space-y-stack-lg flex flex-col" aria-live="polite"></div>
     </section>
+
+    <!-- Floating dock input (chat mode) -->
+    <div id="dock-wrap" class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-background via-background to-transparent pt-10 pb-4 px-margin-mobile md:px-margin-desktop z-20" hidden>
+      <div class="max-w-[800px] mx-auto">
+        <form id="dock" autocomplete="off" class="glass-panel rounded-2xl flex flex-col p-2 glow-focus transition-all duration-300">
+          <div id="preview-dock" class="attach-preview px-3 pt-2" hidden></div>
+          <div class="flex items-center gap-1">
+            <input type="file" id="file-dock" class="file-input" accept="image/*" hidden />
+            <button type="button" class="attach icon-btn" data-target="file-dock" aria-label="Attach image" title="Attach image">
+              <span class="material-symbols-outlined">attach_file</span>
+            </button>
+            <button type="button" class="mic icon-btn" data-target="dock-input" aria-label="Voice input" title="Voice input">
+              <span class="material-symbols-outlined">mic</span>
+            </button>
+            <textarea id="dock-input" rows="1" placeholder="Reply to the Boring Dev…" aria-label="Message the Boring Dev"
+              class="flex-1 resize-none bg-transparent border-none text-on-surface font-body-md placeholder-on-surface-variant/50 focus:ring-0 px-2 py-2 max-h-[200px] outline-none"></textarea>
+            <button type="submit" aria-label="Send message"
+              class="w-10 h-10 shrink-0 rounded-xl bg-primary-container text-on-primary-container flex items-center justify-center hover:opacity-90 transition-all shadow-[0_0_15px_rgba(160,120,255,0.2)]">
+              <span class="material-symbols-outlined" style="font-size:20px;">arrow_upward</span>
+            </button>
+          </div>
+        </form>
+        <footer class="flex justify-center items-center w-full py-3">
+          <span class="font-mono text-[10px] text-on-surface-variant/50">The Boring Dev · powered by Mistral</span>
+        </footer>
+      </div>
+    </div>
   </main>
 
-  <!-- Docked composer for chat mode -->
-  <form class="dock" id="dock" hidden autocomplete="off">
-    <div class="attach-preview" id="preview-dock" hidden></div>
-    <input type="file" id="file-dock" class="file-input" accept="image/*" hidden />
-    <button type="button" class="attach" data-target="file-dock" aria-label="Attach image" title="Attach image">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a5 5 0 0 1-7.07-7.07l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
-    </button>
-    <button type="button" class="mic" data-target="dock-input" aria-label="Speak your message" title="Voice input">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-    </button>
-    <textarea id="dock-input" class="composer-input" rows="1" placeholder="Reply to the Boring Dev…" aria-label="Message the Boring Dev"></textarea>
-    <button type="submit" class="send" aria-label="Send message">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="6 11 12 5 18 11"></polyline></svg>
-    </button>
-  </form>
-
-  <footer class="foot">
-    <span>The Boring Dev · powered by Mistral</span>
-  </footer>
-
-  <script src="script.js"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
