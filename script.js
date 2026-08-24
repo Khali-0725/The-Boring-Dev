@@ -72,9 +72,100 @@
     return msg;
   }
 
+  /* ----- tiny, safe markdown renderer ----- */
+  function escapeHtml(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  /* inline + block-ish markdown for the non-code parts */
+  function renderInline(text) {
+    const lines = text.split("\n");
+    let out = "", inList = false;
+    for (const raw of lines) {
+      let e = escapeHtml(raw);
+      e = e.replace(/`([^`]+)`/g, '<code class="inline">$1</code>');
+      e = e.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+      const trimmed = raw.trim();
+
+      if (/^[-*•]\s+/.test(trimmed)) {
+        if (!inList) { out += "<ul>"; inList = true; }
+        out += "<li>" + e.replace(/^\s*[-*•]\s+/, "") + "</li>";
+        continue;
+      }
+      if (inList) { out += "</ul>"; inList = false; }
+
+      const h = trimmed.match(/^(#{1,4})\s+/);
+      if (h) {
+        const lvl = h[1].length;
+        out += "<h" + lvl + ">" + e.replace(/^\s*#{1,4}\s+/, "") + "</h" + lvl + ">";
+        continue;
+      }
+      if (trimmed === "") continue;
+      out += "<p>" + e + "</p>";
+    }
+    if (inList) out += "</ul>";
+    return out;
+  }
+
+  /* full markdown: pull out ```fenced code``` blocks, render the rest inline */
+  function renderMarkdown(src) {
+    const re = /```([^\n`]*)\n?([\s\S]*?)```/g;
+    let out = "", last = 0, m;
+    while ((m = re.exec(src))) {
+      if (m.index > last) out += renderInline(src.slice(last, m.index));
+      const code = escapeHtml(m[2].replace(/\n$/, ""));
+      out +=
+        '<div class="code-block">' +
+        '<button class="code-copy" type="button">copy</button>' +
+        "<pre><code>" + code + "</code></pre></div>";
+      last = re.lastIndex;
+    }
+    if (last < src.length) out += renderInline(src.slice(last));
+    return out;
+  }
+
+  function flashButton(btn, label) {
+    const original = btn.textContent;
+    btn.textContent = label;
+    btn.classList.add("done");
+    setTimeout(function () {
+      btn.textContent = original;
+      btn.classList.remove("done");
+    }, 1400);
+  }
+
+  /* wire up code-block + message copy buttons inside a rendered message */
+  function wireCopy(msg, rawText) {
+    msg.querySelectorAll(".code-copy").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        const code = btn.parentElement.querySelector("code");
+        navigator.clipboard.writeText(code ? code.textContent : "");
+        flashButton(btn, "copied");
+      });
+    });
+    const copyMsg = msg.querySelector(".copy-msg");
+    if (copyMsg) {
+      copyMsg.addEventListener("click", function () {
+        navigator.clipboard.writeText(rawText);
+        flashButton(copyMsg, "copied");
+      });
+    }
+  }
+
+  /* add the response-time + copy footer to an assistant message */
+  function addMeta(msg, rawText, secs) {
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.innerHTML =
+      '<span class="speed">⚡ ' + secs + 's</span>' +
+      '<button class="copy-msg" type="button">copy</button>';
+    msg.appendChild(meta);
+  }
+
   /* call our serverless function and stream the reply token-by-token */
   function ariaReply(userText) {
     const typing = addTyping();
+    const t0 = (window.performance || Date).now();
     fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -105,11 +196,15 @@
           const chunk = await reader.read();
           if (chunk.done) break;
           full += decoder.decode(chunk.value, { stream: true });
-          bodyEl.textContent = full;
+          bodyEl.textContent = full;         // fast, plain text while streaming
           msg.scrollIntoView({ behavior: "smooth", block: "end" });
         }
 
         if (full.trim()) {
+          const secs = (((window.performance || Date).now() - t0) / 1000).toFixed(1);
+          bodyEl.innerHTML = renderMarkdown(full);   // prettify when done
+          addMeta(msg, full, secs);
+          wireCopy(msg, full);
           history.push({ role: "assistant", content: full });
         } else {
           bodyEl.textContent = "That didn't go through — empty reply.";
