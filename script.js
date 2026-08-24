@@ -673,6 +673,7 @@
   const chatMenu = document.createElement("div");
   chatMenu.className = "chat-menu";
   chatMenu.hidden = true;
+  chatMenu.style.display = "none";
   chatMenu.innerHTML =
     '<button type="button" data-act="rename"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>Rename</button>' +
     '<button type="button" data-act="delete" class="danger"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>Delete</button>';
@@ -681,6 +682,7 @@
   function openChatMenu(btn, id) {
     menuChatId = id;
     chatMenu.hidden = false;
+    chatMenu.style.display = "flex";     // force-show (immune to CSS cache/specificity)
     const r = btn.getBoundingClientRect();
     const mw = chatMenu.offsetWidth || 150;
     let left = r.right - mw;
@@ -688,7 +690,11 @@
     chatMenu.style.left = left + "px";
     chatMenu.style.top = (r.bottom + 6) + "px";
   }
-  function closeChatMenu() { chatMenu.hidden = true; menuChatId = null; }
+  function closeChatMenu() {
+    chatMenu.hidden = true;
+    chatMenu.style.display = "none";      // force-hide, regardless of any CSS rule
+    menuChatId = null;
+  }
   chatMenu.addEventListener("click", function (e) {
     const b = e.target.closest("button");
     if (!b) return;
