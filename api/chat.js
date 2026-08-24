@@ -32,12 +32,28 @@ export default async function handler(req, res) {
     return;
   }
 
+  // Normalize each message. Text messages stay strings; multimodal messages
+  // (an array of {type:"text"|"image_url", ...} parts) are passed through so
+  // Mistral's vision can see attached images. Text is capped; images are kept.
+  function normalize(content) {
+    if (Array.isArray(content)) {
+      return content
+        .filter((part) => part && (part.type === "text" || part.type === "image_url"))
+        .map((part) =>
+          part.type === "text"
+            ? { type: "text", text: String(part.text || "").slice(0, 8000) }
+            : part
+        );
+    }
+    return String(content).slice(0, 8000);
+  }
+
   const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body || {};
   const history = Array.isArray(body.messages) ? body.messages : [];
   const messages = history
     .filter((m) => m && (m.role === "user" || m.role === "assistant") && m.content)
     .slice(-20)
-    .map((m) => ({ role: m.role, content: String(m.content).slice(0, 8000) }));
+    .map((m) => ({ role: m.role, content: normalize(m.content) }));
 
   // Abort only if the provider is slow to START responding; once tokens flow we let it run.
   const controller = new AbortController();

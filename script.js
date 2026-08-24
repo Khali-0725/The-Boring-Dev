@@ -17,6 +17,70 @@
 
   let started = false;
   const history = [];   // conversation so far: {role, content}
+  let pendingImage = null;  // data-URL of an attached image, or null
+
+  /* ----- image attach ----- */
+  const previews = [document.getElementById("preview-hero"), document.getElementById("preview-dock")];
+
+  /* shrink an image file to a small JPEG data URL (keeps the request light) */
+  function fileToDataURL(file, maxDim, quality) {
+    return new Promise(function (resolve, reject) {
+      const reader = new FileReader();
+      reader.onerror = reject;
+      reader.onload = function () {
+        const img = new Image();
+        img.onerror = reject;
+        img.onload = function () {
+          let w = img.width, h = img.height;
+          if (w > h && w > maxDim) { h = Math.round(h * maxDim / w); w = maxDim; }
+          else if (h > maxDim) { w = Math.round(w * maxDim / h); h = maxDim; }
+          const canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderPreview() {
+    previews.forEach(function (p) {
+      if (!p) return;
+      if (pendingImage) {
+        p.hidden = false;
+        p.innerHTML = '<img alt="attachment" /><button type="button" class="remove">remove</button>';
+        p.querySelector("img").src = pendingImage;
+        p.querySelector(".remove").addEventListener("click", clearImage);
+      } else {
+        p.hidden = true;
+        p.innerHTML = "";
+      }
+    });
+  }
+
+  function clearImage() {
+    pendingImage = null;
+    renderPreview();
+  }
+
+  document.querySelectorAll(".attach").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      const input = document.getElementById(btn.getAttribute("data-target"));
+      if (input) input.click();
+    });
+  });
+  document.querySelectorAll(".file-input").forEach(function (input) {
+    input.addEventListener("change", function () {
+      const file = input.files && input.files[0];
+      input.value = ""; // allow re-picking the same file later
+      if (!file) return;
+      fileToDataURL(file, 1024, 0.8)
+        .then(function (url) { pendingImage = url; renderPreview(); })
+        .catch(function () { addMessage("aria", "Couldn't read that image — try a different file."); });
+    });
+  });
 
   /* ----- theme toggle ----- */
   function syncThemeButton() {
@@ -40,8 +104,9 @@
     el.style.height = Math.min(el.scrollHeight, 200) + "px";
   }
 
-  /* create and append a message bubble; returns the element */
-  function addMessage(role, text) {
+  /* create and append a message bubble; returns the element.
+     imageURL (optional) shows a thumbnail inside a user bubble. */
+  function addMessage(role, text, imageURL) {
     const msg = document.createElement("div");
     msg.className = "msg " + role;
 
@@ -54,6 +119,14 @@
     body.className = "body";
     body.textContent = text;
     msg.appendChild(body);
+
+    if (imageURL) {
+      const img = document.createElement("img");
+      img.className = "sent-image";
+      img.src = imageURL;
+      img.alt = "attached image";
+      msg.appendChild(img);
+    }
 
     thread.appendChild(msg);
     msg.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -238,10 +311,24 @@
   /* handle a submitted message from either composer */
   function send(text) {
     text = (text || "").trim();
-    if (!text) return;
+    const image = pendingImage;
+    if (!text && !image) return;
     enterChat();
-    addMessage("user", text);
-    history.push({ role: "user", content: text });
+
+    addMessage("user", text, image);
+
+    // Multimodal messages use an array of content parts (text + image);
+    // plain text messages stay a simple string.
+    if (image) {
+      const parts = [];
+      if (text) parts.push({ type: "text", text: text });
+      parts.push({ type: "image_url", image_url: { url: image } });
+      history.push({ role: "user", content: parts });
+    } else {
+      history.push({ role: "user", content: text });
+    }
+
+    clearImage();
     ariaReply(text);
   }
 

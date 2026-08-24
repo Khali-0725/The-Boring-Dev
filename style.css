@@ -167,6 +167,7 @@ body {
 .composer {
   display: flex;
   align-items: flex-end;
+  flex-wrap: wrap;
   gap: 10px;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -218,6 +219,61 @@ body {
 .send:hover { transform: translateY(-1px); background: #372DB0; }
 .send:active { transform: translateY(0); }
 .send:disabled { opacity: 0.4; cursor: default; transform: none; }
+
+/* ---------- attach image ---------- */
+.attach {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, transform 0.2s var(--ease);
+}
+.attach:hover { color: var(--ink); border-color: var(--faint); transform: translateY(-1px); }
+
+/* pending-image preview chip (full-width row above the input) */
+.attach-preview {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.attach-preview img {
+  height: 56px;
+  width: auto;
+  max-width: 120px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+.attach-preview .remove {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px 9px;
+  cursor: pointer;
+  transition: color 0.18s, border-color 0.18s;
+}
+.attach-preview .remove:hover { color: var(--ink); border-color: var(--faint); }
+
+/* image inside a sent message bubble */
+.msg .sent-image {
+  display: block;
+  max-width: 240px;
+  width: 100%;
+  border-radius: 12px;
+  margin-top: 4px;
+}
 
 /* ---------- chips ---------- */
 .chips {
@@ -408,6 +464,7 @@ body {
   margin: 0 auto;
   display: flex;
   align-items: flex-end;
+  flex-wrap: wrap;
   gap: 10px;
   background: var(--surface);
   border: 1px solid var(--line);
