@@ -230,7 +230,7 @@ body.scrolled .nav { border-bottom-color: var(--line); }
 .send:disabled { opacity: 0.4; cursor: default; transform: none; }
 
 /* ---------- attach image ---------- */
-.attach {
+.attach, .mic {
   flex: none;
   width: 44px;
   height: 44px;
@@ -243,7 +243,20 @@ body.scrolled .nav { border-bottom-color: var(--line); }
   cursor: pointer;
   transition: color 0.2s, border-color 0.2s, transform 0.2s var(--ease);
 }
-.attach:hover { color: var(--ink); border-color: var(--faint); transform: translateY(-1px); }
+.attach:hover, .mic:hover { color: var(--ink); border-color: var(--faint); transform: translateY(-1px); }
+
+/* mic while listening — indigo + soft pulse */
+.mic.listening {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+  animation: mic-pulse 1.3s infinite;
+}
+@keyframes mic-pulse {
+  0%   { box-shadow: 0 0 0 0 var(--accent-soft); }
+  70%  { box-shadow: 0 0 0 8px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
 
 /* pending-image preview chip (full-width row above the input) */
 .attach-preview {
