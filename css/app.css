@@ -73,6 +73,9 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* ----- hidden guard (Tailwind's .flex etc. override [hidden]; force it off) ----- */
+[hidden] { display: none !important; }
+
 /* ----- surfaces ----- */
 .glass-panel {
   background: var(--glass-bg);
