@@ -64,13 +64,21 @@ body {
 
 /* ---------- nav ---------- */
 .nav {
-  position: relative;
-  z-index: 2;
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  padding: 26px clamp(20px, 5vw, 56px);
+  padding: 20px clamp(20px, 5vw, 56px);
+  background: color-mix(in srgb, var(--paper) 82%, transparent);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.25s var(--ease), background 0.25s var(--ease);
 }
+/* hairline appears only once the page is scrolled */
+body.scrolled .nav { border-bottom-color: var(--line); }
 
 .wordmark {
   font-family: 'Instrument Serif', serif;

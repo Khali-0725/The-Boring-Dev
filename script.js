@@ -560,6 +560,13 @@
   backdrop.addEventListener("click", closeSidebarMobile);
   newChatBtn.addEventListener("click", newChat);
 
+  /* ----- sticky header: hairline once scrolled ----- */
+  function syncScrolled() {
+    document.body.classList.toggle("scrolled", window.scrollY > 4);
+  }
+  window.addEventListener("scroll", syncScrolled, { passive: true });
+  syncScrolled();
+
   /* ----- init: restore the most recent conversation, or start fresh ----- */
   loadStore();
   chats.sort(function (a, b) { return b.updatedAt - a.updatedAt; });
